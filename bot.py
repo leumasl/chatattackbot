@@ -1,72 +1,55 @@
-import requests
-import datetime
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Basic example for a bot that uses inline keyboards.
+# This program is dedicated to the public domain under the CC0 license.
 
-class BotHandler:
+import logging
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+
+def start(bot, update):
+    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
+                 InlineKeyboardButton("Option 2", callback_data='2')],
+                
+                [InlineKeyboardButton("Option 3", callback_data='3')]]
+        
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+
+def button(bot, update):
+    query = update.callback_query
     
-    def __init__(self, token):
-        self.token = token
-        self.api_url = "https://api.telegram.org/bot403985840:AAEPQBb3UhfJchCIYbg3Ed9i0ztl4fjIZiA/".format(token)
-    
-    def get_updates(self, offset=None, timeout=30):
-        method = 'getUpdates'
-        params = {'timeout': timeout, 'offset': offset}
-        resp = requests.get(self.api_url + method, params)
-        result_json = resp.json()['result']
-        return result_json
-    
-    def send_message(self, chat_id, text):
-        params = {'chat_id': chat_id, 'text': text}
-        method = 'sendMessage'
-        resp = requests.post(self.api_url + method, params)
-        return resp
-    
-    def get_last_update(self):
-        get_result = self.get_updates()
-        
-        if len(get_result) > 0:
-            last_update = get_result[-1]
-        else:
-            last_update = get_result[len(get_result)]
-        
-        return last_update
-
-greet_bot = BotHandler(token)
-greetings = ('hello', 'hi', 'greetings', 'sup')
-now = datetime.datetime.now()
+    bot.edit_message_text(text="Selected option: %s" % query.data,
+                          chat_id=query.message.chat_id,
+                          message_id=query.message.message_id)
 
 
-def main():
-    new_offset = None
-    today = now.day
-    hour = now.hour
-    
-    while True:
-        greet_bot.get_updates(new_offset)
-        
-        last_update = greet_bot.get_last_update()
-        
-        last_update_id = last_update['update_id']
-        last_chat_text = last_update['message']['text']
-        last_chat_id = last_update['message']['chat']['id']
-        last_chat_name = last_update['message']['chat']['first_name']
-        
-        if last_chat_text.lower() in greetings and today == now.day and 6 <= hour < 12:
-            greet_bot.send_message(last_chat_id, 'Good Morning  {}'.format(last_chat_name))
-            today += 1
-        
-        elif last_chat_text.lower() in greetings and today == now.day and 12 <= hour < 17:
-            greet_bot.send_message(last_chat_id, 'Good Afternoon {}'.format(last_chat_name))
-            today += 1
-        
-        elif last_chat_text.lower() in greetings and today == now.day and 17 <= hour < 23:
-            greet_bot.send_message(last_chat_id, 'Good Evening  {}'.format(last_chat_name))
-            today += 1
-        
-        new_offset = last_update_id + 1
+def help(bot, update):
+    update.message.reply_text("Use /start to test this bot.")
 
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        exit()
 
+def error(bot, update, error):
+    logging.warning('Update "%s" caused error "%s"' % (update, error))
+
+
+# Create the Updater and pass it your bot's token.
+updater = Updater("403985840:AAEPQBb3UhfJchCIYbg3Ed9i0ztl4fjIZiA/")
+
+updater.dispatcher.add_handler(CommandHandler('start', start))
+updater.dispatcher.add_handler(CallbackQueryHandler(button))
+updater.dispatcher.add_handler(CommandHandler('help', help))
+updater.dispatcher.add_error_handler(error)
+
+# Start the Bot
+updater.start_polling()
+
+# Run the bot until the user presses Ctrl-C or the process receives SIGINT,
+# SIGTERM or SIGABRT
+updater.idle()
