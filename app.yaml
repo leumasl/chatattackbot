@@ -4,4 +4,8 @@ threadsafe: true
 
 handlers:
 - url: /.*
+<<<<<<< HEAD
     script: ca.py
+=======
+    script: ca.py
+>>>>>>> c95f00f62bca28539ecfee724a0fd200233e158e
