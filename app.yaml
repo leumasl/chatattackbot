@@ -4,4 +4,4 @@ threadsafe: true
 
 handlers:
 - url: /.*
-	script: ca.app
+  script: ca.app
